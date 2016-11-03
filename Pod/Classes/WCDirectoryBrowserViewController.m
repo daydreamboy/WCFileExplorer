@@ -8,6 +8,8 @@
 
 #import "WCDirectoryBrowserViewController.h"
 
+#import <WCFileExplorer/WCInteractiveLabel.h>
+
 @interface WCDirectoryBrowserViewController () <UITableViewDelegate, UITableViewDataSource>
 @property (nonatomic, copy) NSString *pwdPath;  /**< current folder path */
 @property (nonatomic, strong) NSArray *files;   /**< list name of files */
@@ -64,11 +66,15 @@
 
 - (UILabel *)labelTitle {
     if (!_labelTitle) {
-        UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
+        WCInteractiveLabel *label = [[WCInteractiveLabel alloc] initWithFrame:CGRectZero];
         label.textAlignment = NSTextAlignmentCenter;
         label.font = [UIFont systemFontOfSize:15.0f];
         label.lineBreakMode = NSLineBreakByTruncatingHead;
         label.textColor = [UIColor blackColor];
+        label.copyMenuEnabled = YES;
+        
+        UILongPressGestureRecognizer *longPressRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(labelTitleLongPressed:)];
+        [label addGestureRecognizer:longPressRecognizer];
         
         _labelTitle = label;
     }
@@ -89,12 +95,33 @@
     return _tableView;
 }
 
+#pragma mark - Actions
+
+- (void)labelTitleLongPressed:(UILongPressGestureRecognizer *)recognizer {
+    // @see http://nshipster.com/uimenucontroller/
+    if (recognizer.state == UIGestureRecognizerStateRecognized) {
+        WCInteractiveLabel *label = (WCInteractiveLabel *)recognizer.view;
+        CGPoint location = [recognizer locationInView:recognizer.view];
+        
+        [recognizer.view becomeFirstResponder];
+        
+        UIMenuController *menuController = [UIMenuController sharedMenuController];
+        [menuController setMenuItems:@[label.viewMenuItem]];
+        // show menu in cener
+//        [menuController setTargetRect:recognizer.view.frame inView:recognizer.view.superview];
+        // show menu on tapping point
+        // @see http://stackoverflow.com/questions/1146587/how-to-get-uimenucontroller-work-for-a-custom-view
+        [menuController setTargetRect:CGRectMake(location.x, location.y, 0.0f, 0.0f) inView:recognizer.view];
+        [menuController setMenuVisible:YES animated:YES];
+    }
+}
+
 #pragma mark - Utility
 
 - (NSString *)pathForFile:(NSString *)file {
     return [self.pwdPath stringByAppendingPathComponent:file];
 }
-
+         
 #pragma mark > Check Files
 
 - (BOOL)fileIsDirectory:(NSString *)file {
