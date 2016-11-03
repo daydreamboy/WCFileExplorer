@@ -9,10 +9,14 @@
 #import "WCDirectoryBrowserViewController.h"
 
 @interface WCDirectoryBrowserViewController () <UITableViewDelegate, UITableViewDataSource>
-@property (nonatomic, copy) NSString *pwdPath;  /**< current foler path */
+@property (nonatomic, copy) NSString *pwdPath;  /**< current folder path */
 @property (nonatomic, strong) NSArray *files;   /**< list name of files */
 
 @property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) UIDocumentInteractionController *documentController;
+
+@property (nonatomic, strong) UILabel *labelTitle;
+
 @end
 
 @implementation WCDirectoryBrowserViewController
@@ -32,15 +36,19 @@
     self.view.backgroundColor = [UIColor whiteColor];
     
     [self.view addSubview:self.tableView];
+    
+    self.labelTitle.text = self.pwdPath;
+    [self.labelTitle sizeToFit];
+    
+    self.navigationItem.titleView = self.labelTitle;
+    
+    if (self.pwdPath.length) {
+        self.files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.pwdPath error:nil];
+    }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    
-    if (self.pwdPath.length) {
-        self.files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.pwdPath error:nil];
-        self.title = self.pwdPath;
-    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -53,6 +61,20 @@
 }
 
 #pragma mark - Getters
+
+- (UILabel *)labelTitle {
+    if (!_labelTitle) {
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
+        label.textAlignment = NSTextAlignmentCenter;
+        label.font = [UIFont systemFontOfSize:15.0f];
+        label.lineBreakMode = NSLineBreakByTruncatingHead;
+        label.textColor = [UIColor blackColor];
+        
+        _labelTitle = label;
+    }
+    
+    return _labelTitle;
+}
 
 - (UITableView *)tableView {
     if (!_tableView) {
@@ -140,14 +162,18 @@
     NSString *path = [self pathForFile:file];
     
     if ([self fileIsDirectory:file]) {
+        self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:nil];
+        
         WCDirectoryBrowserViewController *vc = [[WCDirectoryBrowserViewController alloc] initWithPath:path];
         [self.navigationController pushViewController:vc animated:YES];
     }
     else {
-        NSURL *url = [NSURL fileURLWithPath:path];
+        NSURL *fileURL = [NSURL fileURLWithPath:path];
         
-        UIActivityViewController *avc = [[UIActivityViewController alloc] initWithActivityItems:@[url] applicationActivities:nil];
-        [self presentViewController:avc animated:YES completion:nil];
+        UIDocumentInteractionController *vc = [UIDocumentInteractionController interactionControllerWithURL:fileURL];
+        vc.UTI = @"public.text";
+        [vc presentOpenInMenuFromRect:CGRectZero inView:self.view animated:YES];
+//        self.documentController = vc;
     }
 }
 

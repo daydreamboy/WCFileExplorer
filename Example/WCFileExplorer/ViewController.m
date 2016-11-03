@@ -84,6 +84,8 @@
     NSArray *keys = [self.paths allKeys];
     NSString *path = self.paths[keys[indexPath.row]];
     
+    self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:nil];
+    
     WCDirectoryBrowserViewController *vc = [[WCDirectoryBrowserViewController alloc] initWithPath:path];
     [self.navigationController pushViewController:vc animated:YES];
 }
