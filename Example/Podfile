@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'WCFileExplorer_Example' do
+  pod 'WCFileExplorer', :path => '../'
+
+  target 'WCFileExplorer_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
