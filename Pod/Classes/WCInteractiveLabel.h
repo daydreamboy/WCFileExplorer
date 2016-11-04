@@ -20,8 +20,9 @@ typedef NS_OPTIONS(NSUInteger, WCContextMenuItem) {
 
 @interface WCInteractiveLabel : UILabel
 
-@property (nonatomic, assign) WCContextMenuItem contextMenuItems;
-@property (nonatomic, assign) WCContextMenuItem allowCustomActionContextMenuItems;
+@property (nonatomic, assign) WCContextMenuItem contextMenuItems;                   /**< showed context menu items */
+@property (nonatomic, assign) WCContextMenuItem allowCustomActionContextMenuItems;  /**< allow menu items perform custom action */
 @property (nonatomic, weak) id<WCInteractiveLabelDelegate> delegate;
+@property (nonatomic, assign) BOOL showContextMenuAlwaysCenetered;                  /**< show context menu centered on label. Default is NO */
 
 @end

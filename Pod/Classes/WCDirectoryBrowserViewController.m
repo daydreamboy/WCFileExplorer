@@ -17,7 +17,7 @@
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) UIDocumentInteractionController *documentController;
 
-@property (nonatomic, strong) UILabel *labelTitle;
+@property (nonatomic, strong) WCInteractiveLabel *labelTitle;
 
 @end
 
@@ -64,7 +64,7 @@
 
 #pragma mark - Getters
 
-- (UILabel *)labelTitle {
+- (WCInteractiveLabel *)labelTitle {
     if (!_labelTitle) {
         WCInteractiveLabel *label = [[WCInteractiveLabel alloc] initWithFrame:CGRectZero];
         label.textAlignment = NSTextAlignmentCenter;
@@ -73,6 +73,7 @@
         label.textColor = [UIColor blackColor];
         label.contextMenuItems = WCContextMenuItemCopy | WCContextMenuItemView;
         label.delegate = self;
+        label.showContextMenuAlwaysCenetered = YES;
         
         _labelTitle = label;
     }

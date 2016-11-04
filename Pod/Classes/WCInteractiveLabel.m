@@ -113,10 +113,15 @@
         UIMenuController *menuController = [UIMenuController sharedMenuController];
         [menuController setMenuItems:[self customMenuItems]];
         // show menu in cener
-        //        [menuController setTargetRect:recognizer.view.frame inView:recognizer.view.superview];
-        // show menu on tapping point
-        // @see http://stackoverflow.com/questions/1146587/how-to-get-uimenucontroller-work-for-a-custom-view
-        [menuController setTargetRect:CGRectMake(location.x, location.y, 0.0f, 0.0f) inView:recognizer.view];
+        if (self.showContextMenuAlwaysCenetered) {
+            [menuController setTargetRect:recognizer.view.frame inView:recognizer.view.superview];
+        }
+        else {
+            // show menu on tapping point
+            // @see http://stackoverflow.com/questions/1146587/how-to-get-uimenucontroller-work-for-a-custom-view
+            [menuController setTargetRect:CGRectMake(location.x, location.y, 0.0f, 0.0f) inView:recognizer.view];
+        }
+        
         [menuController setMenuVisible:YES animated:YES];
     }
 }
