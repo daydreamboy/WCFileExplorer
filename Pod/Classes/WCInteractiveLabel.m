@@ -13,13 +13,13 @@
 
 @implementation WCInteractiveLabel
 
-
 #pragma mark
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
         self.userInteractionEnabled = YES;
+        self.showContextMenuAlwaysCenetered = YES;
         
         // @see http://stackoverflow.com/questions/6591044/uilabel-with-uimenucontroller-not-resigning-first-responder-with-touch-outside
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleMenuControllerDidHideMenuNotification:) name:UIMenuControllerDidHideMenuNotification object:nil];
@@ -73,8 +73,8 @@
 
 - (void)viewText:(id)sender {
     if (self.allowCustomActionContextMenuItems & WCContextMenuItemView) {
-        if ([self.delegate respondsToSelector:@selector(contextMenuItemClicked:withSender:)]) {
-            [self.delegate contextMenuItemClicked:WCContextMenuItemView withSender:self];
+        if ([self.delegate respondsToSelector:@selector(interactiveLabel:contextMenuItemClicked:withSender:)]) {
+            [self.delegate interactiveLabel:self contextMenuItemClicked:WCContextMenuItemView withSender:self];
         }
     }
     else {
@@ -85,8 +85,8 @@
 
 - (void)copyText:(id)sender {
     if (self.allowCustomActionContextMenuItems & WCContextMenuItemCopy) {
-        if ([self.delegate respondsToSelector:@selector(contextMenuItemClicked:withSender:)]) {
-            [self.delegate contextMenuItemClicked:WCContextMenuItemCopy withSender:self];
+        if ([self.delegate respondsToSelector:@selector(interactiveLabel:contextMenuItemClicked:withSender:)]) {
+            [self.delegate interactiveLabel:self contextMenuItemClicked:WCContextMenuItemCopy withSender:self];
         }
     }
     else {
