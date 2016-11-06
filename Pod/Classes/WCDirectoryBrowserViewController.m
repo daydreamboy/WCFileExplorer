@@ -10,6 +10,7 @@
 
 #import <WCFileExplorer/WCInteractiveLabel.h>
 #import <WCFileExplorer/WCContextMenuCell.h>
+#import <WCFileExplorer/WCTextEditViewController.h>
 
 @interface WCDirectoryBrowserViewController () <UITableViewDelegate, UITableViewDataSource, WCInteractiveLabelDelegate, WCContextMenuCellDelegate>
 @property (nonatomic, copy) NSString *pwdPath;  /**< current folder path */
@@ -73,9 +74,9 @@
     if (!_labelTitle) {
         WCInteractiveLabel *label = [[WCInteractiveLabel alloc] initWithFrame:CGRectZero];
         label.textAlignment = NSTextAlignmentCenter;
-        label.font = [UIFont systemFontOfSize:15.0f];
+        label.font = [UIFont boldSystemFontOfSize:15.0f];
         label.lineBreakMode = NSLineBreakByTruncatingHead;
-        label.textColor = [UIColor blackColor];
+        label.textColor = [UIColor blueColor];
         label.contextMenuItems = WCContextMenuItemCopy | WCContextMenuItemView;
         label.delegate = self;
         label.showContextMenuAlwaysCenetered = YES;
@@ -108,10 +109,10 @@
 #pragma mark > Check Files
 
 - (BOOL)fileIsDirectory:(NSString *)file {
-    BOOL isdir = NO;
+    BOOL isDir = NO;
     NSString *path = [self pathForFile:file];
-    [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isdir];
-    return isdir;
+    [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
+    return isDir;
 }
 
 - (BOOL)fileIsPlist:(NSString *)file {
@@ -182,19 +183,15 @@
     NSString *file = self.files[indexPath.row];
     NSString *path = [self pathForFile:file];
     
+    self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:nil];
+    
     if ([self fileIsDirectory:file]) {
-        self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:nil];
-        
         WCDirectoryBrowserViewController *vc = [[WCDirectoryBrowserViewController alloc] initWithPath:path];
         [self.navigationController pushViewController:vc animated:YES];
     }
     else {
-        NSURL *fileURL = [NSURL fileURLWithPath:path];
-        
-        UIDocumentInteractionController *vc = [UIDocumentInteractionController interactionControllerWithURL:fileURL];
-        vc.UTI = @"public.text";
-        [vc presentOptionsMenuFromRect:CGRectZero inView:self.view animated:YES];
-//        self.documentController = vc;
+        WCTextEditViewController *vc = [[WCTextEditViewController alloc] initWithFilePath:path];
+        [self.navigationController pushViewController:vc animated:YES];
     }
 }
 
