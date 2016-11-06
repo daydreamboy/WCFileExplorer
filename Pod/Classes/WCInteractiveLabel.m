@@ -9,6 +9,7 @@
 #import "WCInteractiveLabel.h"
 
 @interface WCInteractiveLabel ()
+@property (nonatomic, assign) WCContextMenuItem contextMenuItemOptions;
 @end
 
 @implementation WCInteractiveLabel
@@ -42,36 +43,67 @@
 
 #pragma mark - Configure Custom Menu Items
 
+- (void)setContextMenuItemTypes:(NSArray<NSNumber *> *)contextMenuItemTypes {
+    _contextMenuItemTypes = contextMenuItemTypes;
+    
+    if (self.contextMenuItemTypes.count) {
+        WCContextMenuItem options = kNilOptions;
+        
+        for (NSNumber *number in self.contextMenuItemTypes) {
+            WCContextMenuItem opt = [number unsignedIntegerValue];
+            options = options | opt;
+        }
+        
+        self.contextMenuItemOptions = options;
+    }
+}
+
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
     
-    if (action == @selector(viewText:) && (self.contextMenuItems & WCContextMenuItemView)) {
-        return YES;
+    if (self.contextMenuItemTypes.count) {
+        
+        // Test actions and options
+        if (action == @selector(viewAction:) && (self.contextMenuItemOptions & WCContextMenuItemView)) {
+            return YES;
+        }
+        else if (action == @selector(copyAction:) && (self.contextMenuItemOptions & WCContextMenuItemCopy)) {
+            return YES;
+        }
+        else {
+            return NO;
+        }
     }
-    else if (action == @selector(copyText:) && (self.contextMenuItems & WCContextMenuItemCopy)) {
-        return YES;
+    else {
+        // No menu items defined
+        return NO;
     }
-    
-    return NO;
 }
 
 - (NSArray *)customMenuItems {
     NSMutableArray *items = [NSMutableArray array];
     
-    // Define menu item order here
-    if (self.contextMenuItems & WCContextMenuItemView) {
-        [items addObject:[[UIMenuItem alloc] initWithTitle:NSLocalizedString(@"View", nil) action:@selector(viewText:)]];
-    }
-    
-    if (self.contextMenuItems & WCContextMenuItemCopy) {
-        [items addObject:[[UIMenuItem alloc] initWithTitle:NSLocalizedString(@"Copy", nil) action:@selector(copyText:)]];
+    for (NSUInteger i = 0; i < [self.contextMenuItemTypes count]; i++) {
+        WCContextMenuItem option = [self.contextMenuItemTypes[i] unsignedIntegerValue];
+        
+        NSString *itemTitle = i < [self.contextMenuItemTitles count] ? self.contextMenuItemTitles[i] : nil;
+        
+        if (option & WCContextMenuItemView) {
+            NSString *title = itemTitle.length ? itemTitle : NSLocalizedString(@"View", nil);
+            [items addObject:[[UIMenuItem alloc] initWithTitle:title action:@selector(viewAction:)]];
+        }
+        else if (option & WCContextMenuItemCopy) {
+            NSString *title = itemTitle.length ? itemTitle : NSLocalizedString(@"Copy", nil);
+            [items addObject:[[UIMenuItem alloc] initWithTitle:title action:@selector(copyAction:)]];
+        }
     }
     
     return items;
 }
 
+
 #pragma mark > Menu Item Actions (without UIResponderStandardEditActions)
 
-- (void)viewText:(id)sender {
+- (void)viewAction:(id)sender {
     if (self.allowCustomActionContextMenuItems & WCContextMenuItemView) {
         if ([self.delegate respondsToSelector:@selector(interactiveLabel:contextMenuItemClicked:withSender:)]) {
             [self.delegate interactiveLabel:self contextMenuItemClicked:WCContextMenuItemView withSender:self];
@@ -83,7 +115,7 @@
     }
 }
 
-- (void)copyText:(id)sender {
+- (void)copyAction:(id)sender {
     if (self.allowCustomActionContextMenuItems & WCContextMenuItemCopy) {
         if ([self.delegate respondsToSelector:@selector(interactiveLabel:contextMenuItemClicked:withSender:)]) {
             [self.delegate interactiveLabel:self contextMenuItemClicked:WCContextMenuItemCopy withSender:self];

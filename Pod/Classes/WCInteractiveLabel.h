@@ -18,7 +18,8 @@
 
 @interface WCInteractiveLabel : UILabel
 
-@property (nonatomic, assign) WCContextMenuItem contextMenuItems;                   /**< showed context menu items */
+@property (nonatomic, strong) NSArray<NSNumber *> *contextMenuItemTypes;            /**< showed context menu items */
+@property (nonatomic, strong) NSArray<NSString *> *contextMenuItemTitles;
 @property (nonatomic, assign) WCContextMenuItem allowCustomActionContextMenuItems;  /**< allow menu items perform custom action */
 @property (nonatomic, weak) id<WCInteractiveLabelDelegate> delegate;
 @property (nonatomic, assign) BOOL showContextMenuAlwaysCenetered;                  /**< show context menu centered on label. Default is YES */

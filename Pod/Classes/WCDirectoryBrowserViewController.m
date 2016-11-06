@@ -77,7 +77,7 @@
         label.font = [UIFont boldSystemFontOfSize:15.0f];
         label.lineBreakMode = NSLineBreakByTruncatingHead;
         label.textColor = [UIColor blueColor];
-        label.contextMenuItems = WCContextMenuItemCopy | WCContextMenuItemView;
+        label.contextMenuItemTypes = @[ @(WCContextMenuItemCopy), @(WCContextMenuItemView)];
         label.delegate = self;
         label.showContextMenuAlwaysCenetered = YES;
         
