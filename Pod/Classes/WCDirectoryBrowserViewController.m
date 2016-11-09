@@ -49,10 +49,6 @@
     if (self.pwdPath.length) {
         self.files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.pwdPath error:nil];
     }
-    
-    UIMenuItem *testMenuItem = [[UIMenuItem alloc] initWithTitle:@"Test" action:@selector(test:)];
-    [[UIMenuController sharedMenuController] setMenuItems: @[testMenuItem]];
-    [[UIMenuController sharedMenuController] update];
 }
 
 - (void)viewWillAppear:(BOOL)animated {

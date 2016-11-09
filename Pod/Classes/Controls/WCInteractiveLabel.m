@@ -137,7 +137,6 @@
 - (void)labelLongPressed:(UILongPressGestureRecognizer *)recognizer {
     // @see http://nshipster.com/uimenucontroller/
     if (recognizer.state == UIGestureRecognizerStateRecognized) {
-        WCInteractiveLabel *label = (WCInteractiveLabel *)recognizer.view;
         CGPoint location = [recognizer locationInView:recognizer.view];
         
         [recognizer.view becomeFirstResponder];
