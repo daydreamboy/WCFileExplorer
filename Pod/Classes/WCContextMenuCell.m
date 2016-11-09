@@ -124,7 +124,7 @@
     }
     else {
         // Default action
-        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:nil message:self.text delegate:nil cancelButtonTitle:NSLocalizedString(@"Ok", nil) otherButtonTitles:nil];
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:nil message:self.textLabel.text delegate:nil cancelButtonTitle:NSLocalizedString(@"Ok", nil) otherButtonTitles:nil];
         [alert show];
     }
 }
@@ -178,7 +178,6 @@
     // @see http://nshipster.com/uimenucontroller/
     if (recognizer.state == UIGestureRecognizerStateRecognized) {
         NSLog(@"_cmd: %@", NSStringFromSelector(_cmd));
-        WCContextMenuCell *label = (WCContextMenuCell *)recognizer.view;
         CGPoint location = [recognizer locationInView:recognizer.view];
         
         [recognizer.view becomeFirstResponder];
