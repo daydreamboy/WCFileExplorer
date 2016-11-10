@@ -47,7 +47,8 @@
     self.navigationItem.titleView = self.labelTitle;
     
     if (self.pwdPath.length) {
-        self.files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.pwdPath error:nil];
+        NSArray *fileNames = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.pwdPath error:nil];
+        self.files = [fileNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
     }
 }
 
