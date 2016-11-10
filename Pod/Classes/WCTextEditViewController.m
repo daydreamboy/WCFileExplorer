@@ -88,7 +88,8 @@
     self.view.backgroundColor = [UIColor whiteColor];
     [self.view addSubview:self.textView];
     
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"⚙ ↺" style:UIBarButtonItemStylePlain target:self action:@selector(showOperationActionSheet:)];
+    // ↺
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"🛠" style:UIBarButtonItemStylePlain target:self action:@selector(showOperationActionSheet:)];
     
     WCSearchInputAccessoryView *searchInputAccessoryView = [WCSearchInputAccessoryView new];
     searchInputAccessoryView.delegate = self;
@@ -110,6 +111,8 @@
         self.textView.contentOffset = CGPointZero;
     }
     else {
+        self.navigationItem.rightBarButtonItem = nil;
+        
         NSLog(@"Error: %@", error);
         NSString *title = [NSString stringWithFormat:@"不能读取文件%@", [self.filePath lastPathComponent]];
         NSString *msg = [NSString stringWithFormat:@"code: %ld, %@", (long)error.code, error.localizedDescription];
@@ -128,9 +131,18 @@
     if ([fileExt isEqualToString:@"plist"]) {
         
         NSPropertyListFormat format = 0;
-        NSData *data = [NSData dataWithContentsOfFile:filePath];
-        id objectM = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:&format error:&errorL];
-        content = [NSString stringWithFormat:@"%@", objectM];
+        NSData *data = [NSData dataWithContentsOfFile:filePath options:kNilOptions error:&errorL];
+        if (data) {
+            @try {
+                id objectM = [NSPropertyListSerialization propertyListWithData:data options:NSPropertyListMutableContainersAndLeaves format:&format error:&errorL];
+                content = [NSString stringWithFormat:@"%@", objectM];
+            }
+            @catch (NSException *exception) {
+                NSLog(@"exception: %@", exception);
+                NSString *reason = exception.reason ? exception.reason : @"文件读取异常";
+                errorL = [NSError errorWithDomain:NSStringFromClass([self class]) code:-1 userInfo:@{ NSLocalizedDescriptionKey: reason }];
+            }
+        }
     }
     else {
         NSStringEncoding encoding = 0;
@@ -186,6 +198,26 @@
         }
         
         self.textView.attributedText = attrString;
+    }
+}
+
+- (void)scrollToNextSearchKeyRange:(NSRange)range searchKey:(NSString *)searchKey {
+    if (range.location != NSNotFound && range.length == searchKey.length) {
+        
+        // @see http://stackoverflow.com/questions/28468187/find-cgpoint-location-of-substring-in-textview/28469139
+        [self.textView.layoutManager ensureLayoutForTextContainer:self.textView.textContainer];
+        
+        UITextPosition *start = [self.textView positionFromPosition:self.textView.beginningOfDocument offset:range.location];
+        UITextPosition *end = [self.textView positionFromPosition:start offset:range.location];
+        UITextRange *textRange = [self.textView textRangeFromPosition:start toPosition:end];
+        
+        CGRect rect = [self.textView firstRectForRange:textRange];
+        NSLog(@"scoll to rect: %@", NSStringFromCGRect(rect));
+        
+        CGFloat statusBarHeight = [UIApplication sharedApplication].statusBarFrame.size.height;
+        CGFloat navBarHeight = self.navigationController.navigationBar.frame.size.height;
+        
+        [self.textView setContentOffset:CGPointMake(0, rect.origin.y - (statusBarHeight + navBarHeight)) animated:YES];
     }
 }
 
@@ -255,6 +287,7 @@
         self.searchKeyCurrentIndex--;
         NSRange range = [ranges[self.searchKeyCurrentIndex] rangeValue];
         [self highlightWithRange:range searchKey:searchKey];
+        [self scrollToNextSearchKeyRange:range searchKey:searchKey];
     }
     
     [self refreshSegmentedControlWithSearchKey:searchKey];
@@ -266,6 +299,7 @@
         self.searchKeyCurrentIndex++;
         NSRange range = [ranges[self.searchKeyCurrentIndex] rangeValue];
         [self highlightWithRange:range searchKey:searchKey];
+        [self scrollToNextSearchKeyRange:range searchKey:searchKey];
     }
     
     [self refreshSegmentedControlWithSearchKey:searchKey];
@@ -288,24 +322,7 @@
             
             NSRange firstRange = [[ranges firstObject] rangeValue];
             [self highlightWithRange:firstRange searchKey:searchKey];
-            
-            if (firstRange.location != NSNotFound && firstRange.length == searchKey.length) {
-                [self.textView scrollRangeToVisible:firstRange];
-                
-                /*
-                // @see http://stackoverflow.com/questions/28468187/find-cgpoint-location-of-substring-in-textview/28469139
-                [self.textView.layoutManager ensureLayoutForTextContainer:self.textView.textContainer];
-                
-                UITextPosition *start = [self.textView positionFromPosition:self.textView.beginningOfDocument offset:range.location];
-                UITextPosition *end = [self.textView positionFromPosition:start offset:range.location];
-                UITextRange *textRange = [self.textView textRangeFromPosition:start toPosition:end];
-                
-                CGRect rect = [self.textView firstRectForRange:textRange];
-                rect.origin.y += CGRectGetHeight(self.textView.bounds) - self.textView.contentInset.top - rect.size.height;
-                
-                [self.textView scrollRectToVisible:rect animated:YES];
-                 */
-            }
+            [self scrollToNextSearchKeyRange:firstRange searchKey:searchKey];
         }
         else {
             NSMutableAttributedString *attrString = [self.attrTextM mutableCopy];
