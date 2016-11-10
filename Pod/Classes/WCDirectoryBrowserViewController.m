@@ -220,9 +220,9 @@
     else if (item & WCContextMenuItemShare) {
         NSURL *fileURL = [NSURL fileURLWithPath:path];
         
-        UIDocumentInteractionController *vc = [UIDocumentInteractionController interactionControllerWithURL:fileURL];
-        vc.UTI = @"public.text";
-        [vc presentOptionsMenuFromRect:CGRectZero inView:self.view animated:YES];
+        self.documentController = [UIDocumentInteractionController interactionControllerWithURL:fileURL];
+        self.documentController.UTI = @"public.data";
+        [self.documentController presentOptionsMenuFromRect:CGRectZero inView:self.view animated:YES];
     }
     else if (item & WCContextMenuItemProperty) {
         NSLog(@"WCContextMenuItemProperty");
