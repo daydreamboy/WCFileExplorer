@@ -378,18 +378,22 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
     if (ranges.count) {
         NSMutableAttributedString *attrString = [self.attrTextM mutableCopy];
         
-        // highlight first range
-        if (firstRange.location != NSNotFound && firstRange.length == searchKey.length) {
-            self.currentHighlightRange = firstRange;
-            
-            [attrString setAttributes:@{ NSBackgroundColorAttributeName: self.colorForCurrent } range:firstRange];
-        }
-        
-        // highlight other ranges
-        for (NSUInteger i = 1; i < ranges.count; i++) {
+        for (NSUInteger i = 0; i < ranges.count; i++) {
             NSRange range = [ranges[i] rangeValue];
-            if (range.location != NSNotFound && range.length == searchKey.length) {
-                [attrString setAttributes:@{ NSBackgroundColorAttributeName: self.colorForAll } range:range];
+            
+            if (range.location == firstRange.location && range.length == firstRange.length) {
+                // highlight first range
+                if (firstRange.location != NSNotFound && firstRange.length == searchKey.length) {
+                    self.currentHighlightRange = firstRange;
+                    
+                    [attrString setAttributes:@{ NSBackgroundColorAttributeName: self.colorForCurrent } range:firstRange];
+                }
+            }
+            else {
+                // highlight other ranges
+                if (range.location != NSNotFound && range.length == searchKey.length) {
+                    [attrString setAttributes:@{ NSBackgroundColorAttributeName: self.colorForAll } range:range];
+                }
             }
         }
         
@@ -411,17 +415,23 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
 - (void)refreshPeviousItemAndNextItem {
     NSArray *ranges = self.searchInventoryM[self.currentSearchKey];
     
-    if (0 < self.searchKeyCurrentIndex && self.searchKeyCurrentIndex + 1 < ranges.count) {
+    if (self.searchOrderItemActionsIndex == WCSearchOrderActionLoop) {
         self.previousItem.enabled = YES;
         self.nextItem.enabled = YES;
     }
-    else if (self.searchKeyCurrentIndex == 0) {
-        self.previousItem.enabled = NO;
-        self.nextItem.enabled = YES;
-    }
-    else if (self.searchKeyCurrentIndex + 1 == ranges.count) {
-        self.previousItem.enabled = YES;
-        self.nextItem.enabled = NO;
+    else {
+        if (0 < self.searchKeyCurrentIndex && self.searchKeyCurrentIndex + 1 < ranges.count) {
+            self.previousItem.enabled = YES;
+            self.nextItem.enabled = YES;
+        }
+        else if (self.searchKeyCurrentIndex == 0) {
+            self.previousItem.enabled = NO;
+            self.nextItem.enabled = YES;
+        }
+        else if (self.searchKeyCurrentIndex + 1 == ranges.count) {
+            self.previousItem.enabled = YES;
+            self.nextItem.enabled = NO;
+        }
     }
 }
 
@@ -505,17 +515,27 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
 
 - (void)previousItemClicked:(UIBarButtonItem *)barItem {
     NSArray *ranges = self.searchInventoryM[self.currentSearchKey];
+    if (self.searchKeyCurrentIndex - 1 == -1 && self.searchOrderItemActionsIndex == WCSearchOrderActionLoop) {
+        self.searchKeyCurrentIndex = ranges.count;
+    }
+
     if (self.searchKeyCurrentIndex - 1 >= 0) {
         self.searchKeyCurrentIndex--;
         NSRange range = [ranges[self.searchKeyCurrentIndex] rangeValue];
         [self highlightWithRange:range searchKey:self.currentSearchKey];
         [self.textView scrollRangeToVisible:range];
     }
+
     [self refreshPeviousItemAndNextItem];
 }
 
 - (void)nextItemClicked:(UIBarButtonItem *)barItem {
     NSArray *ranges = self.searchInventoryM[self.currentSearchKey];
+    
+    if (self.searchKeyCurrentIndex + 1 == ranges.count && self.searchOrderItemActionsIndex == WCSearchOrderActionLoop) {
+        self.searchKeyCurrentIndex = -1;
+    }
+    
     if (self.searchKeyCurrentIndex + 1 < ranges.count) {
         self.searchKeyCurrentIndex++;
         NSRange range = [ranges[self.searchKeyCurrentIndex] rangeValue];
@@ -553,6 +573,8 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
     else if (actionSheet.tag == WCActionSheetTypeSearchOrderActions) {
         if (buttonIndex != actionSheet.cancelButtonIndex) {
             self.searchOrderItemActionsIndex = buttonIndex;
+            
+            [self refreshPeviousItemAndNextItem];
         }
     }
 }
@@ -578,20 +600,47 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
         self.currentSearchKey = searchKey;
         
         NSArray *ranges = [self rangesOfSubstring:searchKey inString:self.textView.text];
+        
+        // Disable retreiving ranges from self.searchInventoryM
         //NSArray *ranges = [self.searchInventoryM[searchKey] count] ? self.searchInventoryM[searchKey] : [self rangesOfSubstring:searchKey inString:self.textView.text];
         
         self.searchInventoryM[searchKey] = ranges;
-        self.searchKeyCurrentIndex = 0;
+        
         self.searchBar.prompt = [NSString stringWithFormat:@"找到%ld个匹配", (long)ranges.count];
         
         if (ranges.count) {
-            self.previousItem.enabled = NO;
-            self.nextItem.enabled = YES;
+            NSRange firstRange = NSMakeRange(0, 0);
             
-            NSRange firstRange = [[ranges firstObject] rangeValue];
-            [self highlightAllWithFirstRange:firstRange searchKey:searchKey];
+            if (self.searchOrderItemActionsIndex == WCSearchOrderActionFrontToEnd) {
+                self.searchKeyCurrentIndex = 0;
+                
+                self.previousItem.enabled = NO;
+                self.nextItem.enabled = YES;
+                
+                firstRange = [[ranges firstObject] rangeValue];
+            }
+            else if (self.searchOrderItemActionsIndex == WCSearchOrderActionEndToFront) {
+                self.searchKeyCurrentIndex = ranges.count - 1;
+                
+                self.previousItem.enabled = YES;
+                self.nextItem.enabled = NO;
+                
+                firstRange = [[ranges lastObject] rangeValue];
+            }
+            else if (self.searchOrderItemActionsIndex == WCSearchOrderActionLoop) {
+                self.searchKeyCurrentIndex = 0;
+                
+                self.previousItem.enabled = YES;
+                self.nextItem.enabled = YES;
+                
+                firstRange = [[ranges firstObject] rangeValue];
+            }
             
-            [self.textView scrollRangeToVisible:firstRange];
+            if (firstRange.length) {
+                [self highlightAllWithFirstRange:firstRange searchKey:searchKey];
+                
+                [self.textView scrollRangeToVisible:firstRange];
+            }
         }
         else {
             self.previousItem.enabled = NO;
