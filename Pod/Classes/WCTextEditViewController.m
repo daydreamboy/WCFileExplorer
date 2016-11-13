@@ -626,6 +626,9 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
                 self.nextItem.enabled = NO;
                 
                 firstRange = [[ranges lastObject] rangeValue];
+                
+                CGPoint bottomOffset = CGPointMake(0, self.textView.contentSize.height - self.textView.bounds.size.height);
+                [self.textView setContentOffset:bottomOffset animated:NO];
             }
             else if (self.searchOrderItemActionsIndex == WCSearchOrderActionLoop) {
                 self.searchKeyCurrentIndex = 0;
@@ -639,7 +642,9 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
             if (firstRange.length) {
                 [self highlightAllWithFirstRange:firstRange searchKey:searchKey];
                 
-                [self.textView scrollRangeToVisible:firstRange];
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                   [self.textView scrollRangeToVisible:firstRange];
+                });
             }
         }
         else {
