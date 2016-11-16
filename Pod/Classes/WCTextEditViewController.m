@@ -102,6 +102,7 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
 @property (nonatomic, strong) UITextView *textView;
 @property (nonatomic, strong) UIBarButtonItem *actionsItem;
 @property (nonatomic, strong) NSMutableAttributedString *attrTextM;
+@property (nonatomic, strong) NSError *errorOfReadingFile;
 
 @property (nonatomic, strong) NSMutableDictionary *searchInventoryM;
 @property (nonatomic, assign) NSInteger searchKeyCurrentIndex;
@@ -162,6 +163,15 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
+    
+    if (self.errorOfReadingFile) {
+        NSError *error = self.errorOfReadingFile;
+        NSLog(@"Error: %@", error);
+        NSString *title = [NSString stringWithFormat:@"不能读取文件%@", [self.filePath lastPathComponent]];
+        NSString *msg = [NSString stringWithFormat:@"code: %ld, %@", (long)error.code, error.localizedDescription];
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title message:msg delegate:nil cancelButtonTitle:@"好的" otherButtonTitles:nil];
+        [alert show];
+    }
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -229,29 +239,24 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
         
         [self setupToolBarItems];
         
-        UIBarButtonItem *flexSpaceItem1 = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-        
-        UIBarButtonItem *flexSpaceItem2 = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-        UIBarButtonItem *flexSpaceItem3 = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-        UIBarButtonItem *flexSpaceItem4 = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-        UIBarButtonItem *flexSpaceItem5 = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+        UIBarButtonItem *flexSpaceItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
         
         CGSize screenSize = [[UIScreen mainScreen] bounds].size;
         
         UIToolbar *toolBar = [[UIToolbar alloc] initWithFrame:CGRectZero];
         
         toolBar.items = @[
-                          flexSpaceItem1,
+                          flexSpaceItem,
                           self.simpleMatchItem,
-                          flexSpaceItem2,
+                          flexSpaceItem,
                           self.searchOrderItem,
-                          flexSpaceItem1,
+                          flexSpaceItem,
                           self.letterCaseItem,
-                          flexSpaceItem3,
+                          flexSpaceItem,
                           self.previousItem,
-                          flexSpaceItem4,
+                          flexSpaceItem,
                           self.nextItem,
-                          flexSpaceItem5,
+                          flexSpaceItem,
                           ];
         
         [toolBar sizeToFit];
@@ -319,7 +324,7 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
 }
 
 - (void)loadFile {
-    NSError *error;
+    NSError *error = nil;
     NSString *text = [self readFileAtPath:self.filePath error:&error];
     if (!error) {
         self.attrTextM = [[NSMutableAttributedString alloc] initWithString:text];
@@ -328,13 +333,8 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
     }
     else {
         self.navigationItem.rightBarButtonItem = nil;
-        
-        NSLog(@"Error: %@", error);
-        NSString *title = [NSString stringWithFormat:@"不能读取文件%@", [self.filePath lastPathComponent]];
-        NSString *msg = [NSString stringWithFormat:@"code: %ld, %@", (long)error.code, error.localizedDescription];
-        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title message:msg delegate:nil cancelButtonTitle:@"好的" otherButtonTitles:nil];
-        [alert show];
     }
+    self.errorOfReadingFile = error;
 }
 
 - (NSString *)readFileAtPath:(NSString *)filePath error:(NSError **)error {
@@ -555,6 +555,7 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
                 self.currentMode = WCEditModeView;
                 self.toMode = WCEditModeSearching;
                 [self.searchBar becomeFirstResponder];
+                break;
             }
             default:
                 break;

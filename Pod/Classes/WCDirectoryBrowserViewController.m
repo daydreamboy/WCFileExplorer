@@ -12,14 +12,23 @@
 #import <WCFileExplorer/WCContextMenuCell.h>
 #import <WCFileExplorer/WCTextEditViewController.h>
 
-@interface WCDirectoryBrowserViewController () <UITableViewDelegate, UITableViewDataSource, WCInteractiveLabelDelegate, WCContextMenuCellDelegate>
+// File Attributes
+static NSString *WCFileAttributeFileSize = @"WCFileAttributeFileSize";
+static NSString *WCFileAttributeIsDirectory = @"WCFileAttributeIsDirectory";
+static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumberOfFilesInDirectory";
+
+@interface WCDirectoryBrowserViewController () <UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate, WCInteractiveLabelDelegate, WCContextMenuCellDelegate>
 @property (nonatomic, copy) NSString *pwdPath;  /**< current folder path */
 @property (nonatomic, strong) NSArray *files;   /**< list name of files */
+@property (nonatomic, strong) NSArray *filesFiltered; /**< list name of filtered files */
+@property (nonatomic, strong) NSDictionary *fileAttributes; /**< attributes of files */
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) UIDocumentInteractionController *documentController;
 
 @property (nonatomic, strong) WCInteractiveLabel *labelTitle;
+@property (nonatomic, strong) UISearchBar *searchBar;
+@property (nonatomic, assign) BOOL isSearching;
 
 @end
 
@@ -37,6 +46,10 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    if ([self respondsToSelector:@selector(setAutomaticallyAdjustsScrollViewInsets:)]) {
+        self.automaticallyAdjustsScrollViewInsets = NO;
+    }
+    
     self.view.backgroundColor = [UIColor whiteColor];
     
     [self.view addSubview:self.tableView];
@@ -49,11 +62,17 @@
     if (self.pwdPath.length) {
         NSArray *fileNames = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.pwdPath error:nil];
         self.files = [fileNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+        self.filesFiltered = [self.files copy];
+        
+        [self parseAttributesOfFiles];
     }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    
+    CGFloat offsetY = self.isSearching ? 0 : CGRectGetHeight(self.searchBar.frame);
+    [self.tableView setContentOffset:CGPointMake(0, offsetY) animated:NO];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -87,9 +106,17 @@
 - (UITableView *)tableView {
     if (!_tableView) {
         CGSize screenSize = [[UIScreen mainScreen] bounds].size;
-        UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, screenSize.width, screenSize.height) style:UITableViewStylePlain];
+        CGFloat topInset = 64.0f;
+        UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, topInset, screenSize.width, screenSize.height - topInset) style:UITableViewStyleGrouped];
         tableView.delegate = self;
         tableView.dataSource = self;
+        
+        UISearchBar *searchBar = [[UISearchBar alloc] initWithFrame:CGRectMake(0, 0, screenSize.width, 44)];
+        searchBar.delegate = self;
+        searchBar.returnKeyType = UIReturnKeyDone;
+        _searchBar = searchBar;
+        
+        tableView.tableHeaderView = searchBar;
         
         _tableView = tableView;
     }
@@ -97,10 +124,73 @@
     return _tableView;
 }
 
+#pragma mark
+
+- (void)parseAttributesOfFiles {
+    NSMutableDictionary *dictM = [NSMutableDictionary dictionary];
+    for (NSString *fileName in self.files) {
+        
+        NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+        NSString *path = [self pathForFile:fileName];
+        NSArray *subFileNames = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:path error:nil];
+        
+        BOOL isDirectory = NO;
+        unsigned long long fileSize = [self sizefFileAtPath:path isDirectory:&isDirectory];
+        
+        attributes[WCFileAttributeIsDirectory] = @(isDirectory);
+        if (!isDirectory) {
+            // file
+            attributes[WCFileAttributeFileSize] = @(fileSize);
+        }
+        else {
+            // directory
+            attributes[WCFileAttributeNumberOfFilesInDirectory] = @(subFileNames.count);
+        }
+        
+        if (attributes.count) {
+            dictM[fileName] = attributes;
+        }
+    }
+    self.fileAttributes = dictM;
+}
+
 #pragma mark - Utility
 
 - (NSString *)pathForFile:(NSString *)file {
     return [self.pwdPath stringByAppendingPathComponent:file];
+}
+
+- (unsigned long long)sizefFileAtPath:(NSString *)path isDirectory:(BOOL *)isDirectory {
+    BOOL isDirectoryL = NO;
+    BOOL isExisted = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectoryL];
+    
+    *isDirectory = isDirectoryL;
+    if (isDirectoryL || !isExisted) {
+        // If the path is a directory, or no file at the path exists
+        return 0;
+    }
+    
+    NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil];
+    
+    return [attributes[NSFileSize] unsignedLongLongValue];
+}
+
+- (NSString *)prettySizeWithBytes:(unsigned long long)bytes {
+    if (bytes < 1024) {
+        return [NSString stringWithFormat:@"%llu bytes", bytes];
+    }
+    else if (bytes < 1024 * 1024) {
+        return [NSString stringWithFormat:@"%llu KB", bytes / 1024];
+    }
+    else if (bytes < 1024 * 1024 * 1024) {
+        return [NSString stringWithFormat:@"%llu MB", bytes / (1024 * 1024)];
+    }
+    else if (bytes < 1024 * 1024 * 1024 * 1024) {
+        return [NSString stringWithFormat:@"%llu GB", bytes / (1024 * 1024 * 1024)];
+    }
+    else {
+        return [NSString stringWithFormat:@"%llu TB", bytes / (1024 * 1024 * 1024 * 1024)];
+    }
 }
          
 #pragma mark > Check Files
@@ -129,7 +219,7 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [self.files count];
+    return [self.filesFiltered count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -137,16 +227,28 @@
     
     WCContextMenuCell *cell = (WCContextMenuCell *)[tableView dequeueReusableCellWithIdentifier:sCellIdentifier];
     if (cell == nil) {
-        cell = [[WCContextMenuCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:sCellIdentifier];
+        cell = [[WCContextMenuCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:sCellIdentifier];
         cell.textLabel.font = [UIFont systemFontOfSize:16.0];
     }
     
-    NSString *file = [self.files objectAtIndex:indexPath.row];
+    NSString *file = [self.filesFiltered objectAtIndex:indexPath.row];
     NSString *path = [self pathForFile:file];
-    BOOL isDir = [self fileIsDirectory:file];
+    
+    NSDictionary *attributes = self.fileAttributes[file];
+    BOOL isDir = [attributes[WCFileAttributeIsDirectory] boolValue];
     
     cell.textLabel.text = file;
     cell.textLabel.textColor = isDir ? [UIColor blueColor] : [UIColor darkTextColor];
+    if (!isDir) {
+        // file
+        NSString *size = [self prettySizeWithBytes:[attributes[WCFileAttributeFileSize] unsignedLongLongValue]];
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@", size];
+    }
+    else {
+        // directory
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ %@", attributes[WCFileAttributeNumberOfFilesInDirectory], @"files"];
+    }
+    cell.detailTextLabel.textColor = [UIColor grayColor];
     cell.accessoryType = isDir ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
     
     if (isDir) {
@@ -177,7 +279,7 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     
-    NSString *file = self.files[indexPath.row];
+    NSString *file = self.filesFiltered[indexPath.row];
     NSString *path = [self pathForFile:file];
     
     self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"" style:UIBarButtonItemStylePlain target:nil action:nil];
@@ -190,6 +292,52 @@
         WCTextEditViewController *vc = [[WCTextEditViewController alloc] initWithFilePath:path];
         [self.navigationController pushViewController:vc animated:YES];
     }
+}
+
+#pragma mark - UISearchBarDelegate
+
+- (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar {
+    [self.searchBar setShowsCancelButton:YES animated:YES];
+    self.isSearching = YES;
+}
+
+- (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar {
+    [self.searchBar setShowsCancelButton:NO animated:YES];
+    [self.searchBar resignFirstResponder];
+    self.searchBar.text = @"";
+    
+    self.isSearching = NO;
+    
+    self.filesFiltered = [self.files copy];
+    [self.tableView reloadData];
+    
+    CGFloat offsetY = CGRectGetHeight(self.searchBar.frame);
+    [self.tableView setContentOffset:CGPointMake(0, offsetY) animated:YES];
+}
+
+- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText {
+    
+    if (searchText.length) {
+        NSMutableArray *arrM = [NSMutableArray array];
+        
+        for (NSString *fileName in self.files) {
+            
+            if ([fileName rangeOfString:searchText options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                [arrM addObject:fileName];
+            }
+        }
+        
+        self.filesFiltered = arrM;
+    }
+    else {
+        self.filesFiltered = [self.files copy];
+    }
+    
+    [self.tableView reloadData];
+}
+
+- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
+    [self.searchBar resignFirstResponder];
 }
 
 #pragma mark - WCInteractiveLabelDelegate
@@ -208,7 +356,7 @@
 - (void)contextMenuCell:(WCContextMenuCell *)cell contextMenuItemClicked:(WCContextMenuItem)item withSender:(id)sender {
     NSIndexPath *indexPath = [self.tableView indexPathForRowAtPoint:cell.center];
     
-    NSString *file = self.files[indexPath.row];
+    NSString *file = self.filesFiltered[indexPath.row];
     NSString *path = [self pathForFile:file];
     
     if (item & WCContextMenuItemView) {
