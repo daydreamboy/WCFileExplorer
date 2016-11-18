@@ -488,6 +488,12 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
     return actionSheet;
 }
 
+- (void)setNavBackSwipeEnabled:(BOOL)enabled {
+    if ([self.navigationController respondsToSelector:@selector(interactivePopGestureRecognizer)]) {
+        self.navigationController.interactivePopGestureRecognizer.enabled = enabled;
+    }
+}
+
 #pragma mark - Actions
 
 - (void)actionsItemClicked:(id)sender {
@@ -588,6 +594,7 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
     self.currentMode = WCEditModeSearching;
     self.toMode = WCEditModeView;
     [self.searchBar resignFirstResponder];
+    self.searchBar.text = @"";
 }
 
 - (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar {
@@ -663,6 +670,8 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
     if (self.isViewLoaded && self.view.window) {
         
         if (self.currentMode == WCEditModeView && self.toMode == WCEditModeSearching) {
+            [self setNavBackSwipeEnabled:NO];
+            
             CGSize screenSize = [[UIScreen mainScreen] bounds].size;
             
             CGRect toRectForSearchBar = CGRectMake(0, 0, self.searchBar.frame.size.width, self.searchBar.frame.size.height);
@@ -672,8 +681,7 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
             self.navigationController.navigationBar.alpha = 1;
             
             [[UIApplication sharedApplication] setStatusBarHidden:YES withAnimation:UIStatusBarAnimationSlide];
-            
-            self.statusBarHidden = (self.statusBarHidden) ? NO : YES;
+            self.statusBarHidden = YES;
             
             [UIView beginAnimations:nil context:NULL];
             
@@ -701,6 +709,8 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
 - (void)handleKeyboardWillHideNotification:(NSNotification *)notification {
     if (self.isViewLoaded && self.view.window) {
         if (self.currentMode == WCEditModeSearching && self.toMode == WCEditModeView) {
+            [self setNavBackSwipeEnabled:YES];
+            
             CGSize screenSize = [[UIScreen mainScreen] bounds].size;
             CGFloat startY = NAV_BAR_MAX_Y;
             
@@ -711,7 +721,7 @@ static NSString* NSStringFromWCSearchOrderAction(WCSearchOrderAction action) {
             self.navigationController.navigationBar.alpha = 0;
             
             [[UIApplication sharedApplication] setStatusBarHidden:NO withAnimation:UIStatusBarAnimationSlide];
-            self.statusBarHidden = (self.statusBarHidden) ? NO : YES;
+            self.statusBarHidden = NO;
             
             [UIView beginAnimations:nil context:NULL];
             
