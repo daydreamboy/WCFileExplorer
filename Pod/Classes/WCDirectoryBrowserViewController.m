@@ -195,20 +195,20 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
 }
 
 - (NSString *)prettySizeWithBytes:(unsigned long long)bytes {
-    if (bytes < 1024) {
+    if (bytes < 1024L) {
         return [NSString stringWithFormat:@"%llu bytes", bytes];
     }
-    else if (bytes < 1024 * 1024) {
+    else if (bytes < 1024L * 1024L) {
         return [NSString stringWithFormat:@"%llu KB", bytes / 1024];
     }
-    else if (bytes < 1024 * 1024 * 1024) {
-        return [NSString stringWithFormat:@"%llu MB", bytes / (1024 * 1024)];
+    else if (bytes < 1024L * 1024L * 1024L) {
+        return [NSString stringWithFormat:@"%llu MB", bytes / (1024L * 1024L)];
     }
-    else if (bytes < 1024 * 1024 * 1024 * 1024) {
-        return [NSString stringWithFormat:@"%llu GB", bytes / (1024 * 1024 * 1024)];
+    else if (bytes < 1024L * 1024L * 1024L * 1024L) {
+        return [NSString stringWithFormat:@"%llu GB", bytes / (1024L * 1024L * 1024L)];
     }
     else {
-        return [NSString stringWithFormat:@"%llu TB", bytes / (1024 * 1024 * 1024 * 1024)];
+        return [NSString stringWithFormat:@"%llu TB", bytes / (1024L * 1024L * 1024L * 1024L)];
     }
 }
          
