@@ -12,8 +12,10 @@
 #import <WCFileExplorer/WCContextMenuCell.h>
 #import <WCFileExplorer/WCTextEditViewController.h>
 
+#define SectionHeader_H 40.0f
+
 // File Attributes
-static NSString *WCFileAttributeFileSize = @"WCFileAttributeFileSize";
+static NSString *WCFileAttributeFileSize = @"WCFileAttributeFileSize"; /*! size of file, or size of total files in a directory */
 static NSString *WCFileAttributeIsDirectory = @"WCFileAttributeIsDirectory";
 static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumberOfFilesInDirectory";
 
@@ -145,6 +147,9 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
         else {
             // directory
             attributes[WCFileAttributeNumberOfFilesInDirectory] = @(subFileNames.count);
+            
+            unsigned long long totalSize = [self sizeOfDirectoryAtPath:path];
+            attributes[WCFileAttributeFileSize] = @(totalSize);
         }
         
         if (attributes.count) {
@@ -173,6 +178,20 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil];
     
     return [attributes[NSFileSize] unsignedLongLongValue];
+}
+
+- (unsigned long long)sizeOfDirectoryAtPath:(NSString *)path {
+    NSArray *filesArray = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:path error:nil];
+    NSEnumerator *filesEnumerator = [filesArray objectEnumerator];
+    NSString *fileName;
+    unsigned long long fileSize = 0;
+    
+    while (fileName = [filesEnumerator nextObject]) {
+        NSDictionary *fileDictionary = [[NSFileManager defaultManager] attributesOfItemAtPath:[path stringByAppendingPathComponent:fileName] error:nil];
+        fileSize += [fileDictionary fileSize];
+    }
+    
+    return fileSize;
 }
 
 - (NSString *)prettySizeWithBytes:(unsigned long long)bytes {
@@ -239,14 +258,16 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     
     cell.textLabel.text = file;
     cell.textLabel.textColor = isDir ? [UIColor blueColor] : [UIColor darkTextColor];
+    
+    NSString *size = [self prettySizeWithBytes:[attributes[WCFileAttributeFileSize] unsignedLongLongValue]];
     if (!isDir) {
         // file
-        NSString *size = [self prettySizeWithBytes:[attributes[WCFileAttributeFileSize] unsignedLongLongValue]];
         cell.detailTextLabel.text = [NSString stringWithFormat:@"%@", size];
     }
     else {
         // directory
-        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ %@", attributes[WCFileAttributeNumberOfFilesInDirectory], @"files"];
+        NSString *unit = [attributes[WCFileAttributeNumberOfFilesInDirectory] isEqualToNumber:@(1)] ? @"file" : @"files";
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ %@ (%@)", attributes[WCFileAttributeNumberOfFilesInDirectory], unit, size];
     }
     cell.detailTextLabel.textColor = [UIColor grayColor];
     cell.accessoryType = isDir ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
@@ -275,6 +296,36 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
 }
 
 #pragma mark - UITableViewDelegate
+
+- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
+    CGSize screenSize = [[UIScreen mainScreen] bounds].size;
+    CGFloat paddingT = 15.0f;
+    CGFloat paddingL = 15.0f;
+    
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenSize.width, SectionHeader_H)];
+    
+    if ([self.filesFiltered count]) {
+        
+        unsigned long long totalSize = 0;
+        for (NSString *file in self.filesFiltered) {
+            NSDictionary *attributes = self.fileAttributes[file];
+            totalSize += [attributes[WCFileAttributeFileSize] unsignedLongLongValue];
+        }
+        
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(paddingL, paddingT, screenSize.width - paddingL, 20)];
+        label.text = [NSString stringWithFormat:@"%lu items (%@)", (unsigned long)[self.filesFiltered count], [self prettySizeWithBytes:totalSize]];
+        label.font = [UIFont systemFontOfSize:14.0f];
+        label.textColor = [UIColor darkGrayColor];
+        
+        [view addSubview:label];
+    }
+    
+    return view;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
+    return SectionHeader_H;
+}
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
