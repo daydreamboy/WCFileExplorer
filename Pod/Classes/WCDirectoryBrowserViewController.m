@@ -312,8 +312,10 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
             totalSize += [attributes[WCFileAttributeFileSize] unsignedLongLongValue];
         }
         
+        NSString *unit = [self.filesFiltered count] == 1 ? @"item" : @"items";
+        
         UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(paddingL, paddingT, screenSize.width - paddingL, 20)];
-        label.text = [NSString stringWithFormat:@"%lu items (%@)", (unsigned long)[self.filesFiltered count], [self prettySizeWithBytes:totalSize]];
+        label.text = [NSString stringWithFormat:@"%lu %@ (%@)", (unsigned long)[self.filesFiltered count], unit, [self prettySizeWithBytes:totalSize]];
         label.font = [UIFont systemFontOfSize:14.0f];
         label.textColor = [UIColor darkGrayColor];
         
