@@ -23,7 +23,7 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
 @property (nonatomic, copy) NSString *pwdPath;  /**< current folder path */
 @property (nonatomic, strong) NSArray *files;   /**< list name of files */
 @property (nonatomic, strong) NSArray *filesFiltered; /**< list name of filtered files */
-@property (nonatomic, strong) NSDictionary *fileAttributes; /**< attributes of files */
+@property (nonatomic, strong) NSMutableDictionary *fileAttributes; /**< attributes of files */
 
 @property (nonatomic, strong) UITableView *tableView;
 @property (nonatomic, strong) UIDocumentInteractionController *documentController;
@@ -68,13 +68,16 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
         
         [self parseAttributesOfFiles];
     }
+    
+    [self.tableView setContentOffset:CGPointMake(0, CGRectGetHeight(self.searchBar.frame)) animated:NO];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     
-    CGFloat offsetY = self.isSearching ? 0 : CGRectGetHeight(self.searchBar.frame);
-    [self.tableView setContentOffset:CGPointMake(0, offsetY) animated:NO];
+    if (self.isSearching) {
+        [self.tableView setContentOffset:CGPointMake(0, 0) animated:NO];
+    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -129,6 +132,8 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
 #pragma mark
 
 - (void)parseAttributesOfFiles {
+    NSMutableArray *directories = [NSMutableArray array];
+    
     NSMutableDictionary *dictM = [NSMutableDictionary dictionary];
     for (NSString *fileName in self.files) {
         
@@ -147,9 +152,7 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
         else {
             // directory
             attributes[WCFileAttributeNumberOfFilesInDirectory] = @(subFileNames.count);
-            
-            unsigned long long totalSize = [self sizeOfDirectoryAtPath:path];
-            attributes[WCFileAttributeFileSize] = @(totalSize);
+            [directories addObject:[fileName copy]];
         }
         
         if (attributes.count) {
@@ -157,6 +160,39 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
         }
     }
     self.fileAttributes = dictM;
+    
+    // calculate folder size
+    if (directories.count) {
+        __weak typeof(self) weak_self = self;
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            
+            for (NSString *fileName in directories) {
+                if (weak_self == nil) {
+                    // if the current view controller not exists, just abort loop
+                    return;
+                }
+                
+                NSString *path = [self pathForFile:fileName];
+                NSError *error = nil;
+                unsigned long long totalSize = [self sizeOfDirectoryAtPath:path error:&error];
+                
+                NSMutableDictionary *attributes = weak_self.fileAttributes[fileName];
+                attributes[WCFileAttributeFileSize] = (error == nil ? @(totalSize) : error);
+                
+                // once a folder size is calculated, refresh table view to be more real time
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    __strong WCDirectoryBrowserViewController *strong_self = weak_self;
+                    [strong_self.tableView reloadData];
+                });
+            }
+            
+            // after all folders' size is calculated, refresh table view
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong WCDirectoryBrowserViewController *strong_self = weak_self;
+                [strong_self.tableView reloadData];
+            });
+        });
+    }
 }
 
 #pragma mark - Utility
@@ -180,8 +216,11 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     return [attributes[NSFileSize] unsignedLongLongValue];
 }
 
-- (unsigned long long)sizeOfDirectoryAtPath:(NSString *)path {
-    NSArray *filesArray = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:path error:nil];
+- (unsigned long long)sizeOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
+    NSArray *filesArray = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:path error:error];
+    if (*error) {
+        NSLog(@"error: %@", *error);
+    }
     NSEnumerator *filesEnumerator = [filesArray objectEnumerator];
     NSString *fileName;
     unsigned long long fileSize = 0;
@@ -195,21 +234,8 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
 }
 
 - (NSString *)prettySizeWithBytes:(unsigned long long)bytes {
-    if (bytes < 1024L) {
-        return [NSString stringWithFormat:@"%llu bytes", bytes];
-    }
-    else if (bytes < 1024L * 1024L) {
-        return [NSString stringWithFormat:@"%llu KB", bytes / 1024];
-    }
-    else if (bytes < 1024L * 1024L * 1024L) {
-        return [NSString stringWithFormat:@"%llu MB", bytes / (1024L * 1024L)];
-    }
-    else if (bytes < 1024L * 1024L * 1024L * 1024L) {
-        return [NSString stringWithFormat:@"%llu GB", bytes / (1024L * 1024L * 1024L)];
-    }
-    else {
-        return [NSString stringWithFormat:@"%llu TB", bytes / (1024L * 1024L * 1024L * 1024L)];
-    }
+    NSString *sizeString = [NSByteCountFormatter stringFromByteCount:bytes countStyle:NSByteCountFormatterCountStyleFile];
+    return sizeString;
 }
          
 #pragma mark > Check Files
@@ -259,15 +285,28 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     cell.textLabel.text = file;
     cell.textLabel.textColor = isDir ? [UIColor blueColor] : [UIColor darkTextColor];
     
-    NSString *size = [self prettySizeWithBytes:[attributes[WCFileAttributeFileSize] unsignedLongLongValue]];
+    NSString *sizeString = nil;
+    if (attributes[WCFileAttributeFileSize] == nil) {
+        sizeString = @"Computing size...";
+    }
+    else {
+        if ([attributes[WCFileAttributeFileSize] isKindOfClass:[NSError class]]) {
+            NSError *error = (NSError *)attributes[WCFileAttributeFileSize];
+            sizeString = error.localizedDescription;
+        }
+        else {
+            sizeString = [self prettySizeWithBytes:[attributes[WCFileAttributeFileSize] unsignedLongLongValue]];
+        }
+    }
+
     if (!isDir) {
         // file
-        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@", size];
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@", sizeString];
     }
     else {
         // directory
         NSString *unit = [attributes[WCFileAttributeNumberOfFilesInDirectory] isEqualToNumber:@(1)] ? @"file" : @"files";
-        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ %@ (%@)", attributes[WCFileAttributeNumberOfFilesInDirectory], unit, size];
+        cell.detailTextLabel.text = [NSString stringWithFormat:@"%@ %@ (%@)", attributes[WCFileAttributeNumberOfFilesInDirectory], unit, sizeString];
     }
     cell.detailTextLabel.textColor = [UIColor grayColor];
     cell.accessoryType = isDir ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
@@ -305,17 +344,26 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, screenSize.width, SectionHeader_H)];
     
     if ([self.filesFiltered count]) {
-        
+        NSString *loadingTip = nil;
         unsigned long long totalSize = 0;
+        
         for (NSString *file in self.filesFiltered) {
             NSDictionary *attributes = self.fileAttributes[file];
-            totalSize += [attributes[WCFileAttributeFileSize] unsignedLongLongValue];
+            if (attributes[WCFileAttributeFileSize] == nil) {
+                loadingTip = @"Computing size...";
+                break;
+            }
+            else {
+                if ([attributes[WCFileAttributeFileSize] isKindOfClass:[NSNumber class]]) {
+                    totalSize += [attributes[WCFileAttributeFileSize] unsignedLongLongValue];
+                }
+            }
         }
         
         NSString *unit = [self.filesFiltered count] == 1 ? @"item" : @"items";
         
         UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(paddingL, paddingT, screenSize.width - paddingL, 20)];
-        label.text = [NSString stringWithFormat:@"%lu %@ (%@)", (unsigned long)[self.filesFiltered count], unit, [self prettySizeWithBytes:totalSize]];
+        label.text = [NSString stringWithFormat:@"%lu %@ (%@)", (unsigned long)[self.filesFiltered count], unit, loadingTip == nil ? [self prettySizeWithBytes:totalSize] : loadingTip];
         label.font = [UIFont systemFontOfSize:14.0f];
         label.textColor = [UIColor darkGrayColor];
         
