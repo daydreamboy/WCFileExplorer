@@ -12,7 +12,52 @@
 #import <WCFileExplorer/WCContextMenuCell.h>
 #import <WCFileExplorer/WCTextEditViewController.h>
 
-#define SectionHeader_H 40.0f
+#define SectionHeader_H                 40.0f
+
+#define WC_FAVORITE_PATHS_PLIST_PATH    [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches/WCFileExplorer/favorite_paths.plist"]
+
+typedef NS_ENUM(NSUInteger, WCPathType) {
+    WCPathTypeUnknown,  /**< the other paths */
+    WCPathTypeHome,     /**< the path has home folder */
+    WCPathTypeBundle,   /**< the path has bundle folder */
+};
+
+NSString *WCPathTypeUnknownKey = @"unknown";
+NSString *WCPathTypeHomeKey = @"home";
+NSString *WCPathTypeBundleKey = @"bundle";
+
+static NSString *NSStringFromWCPathType(WCPathType pathType)
+{
+    switch (pathType) {
+        case WCPathTypeUnknown:
+        default:
+            return WCPathTypeUnknownKey;
+        case WCPathTypeHome:
+            return WCPathTypeHomeKey;
+        case WCPathTypeBundle:
+            return WCPathTypeBundleKey;
+    }
+}
+
+@interface WCPathItem ()
+@property (nonatomic, copy, readwrite) NSString *path;
+@property (nonatomic, copy) NSString *relativePath;
+@property (nonatomic, assign) WCPathType pathType;
+@end
+
+@implementation WCPathItem
++ (instancetype)itemWithPath:(NSString *)path {
+    WCPathItem *item = [[WCPathItem alloc] init];
+    item.path = path;
+    return item;
+}
+
++ (instancetype)itemWithName:(NSString *)name path:(NSString *)path {
+    WCPathItem *item = [self itemWithPath:path];
+    item.name = name;
+    return item;
+}
+@end
 
 // File Attributes
 static NSString *WCFileAttributeFileSize = @"WCFileAttributeFileSize"; /*! size of file, or size of total files in a directory */
@@ -36,12 +81,81 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
 
 @implementation WCDirectoryBrowserViewController
 
+#pragma mark - Public Methods
+
 - (instancetype)initWithPath:(NSString *)path {
     self = [super init];
     if (self) {
         _pwdPath = path;
     }
     return self;
+}
+
++ (NSArray<WCPathItem *> *)favoritePathItems {
+    NSMutableArray<WCPathItem *> *arrM = [NSMutableArray array];
+    
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:WC_FAVORITE_PATHS_PLIST_PATH];
+    
+    if ([dict isKindOfClass:[NSDictionary class]]) {
+        
+        for (NSString *path in dict[WCPathTypeHomeKey]) {
+            WCPathItem *item = [WCPathItem itemWithPath:[NSHomeDirectory() stringByAppendingPathComponent:path]];
+            item.pathType = WCPathTypeHome;
+            item.relativePath = path;
+            [arrM addObject:item];
+        }
+        
+        for (NSString *path in dict[WCPathTypeBundleKey]) {
+            WCPathItem *item = [WCPathItem itemWithPath:[[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent:path]];
+            item.pathType = WCPathTypeBundle;
+            item.relativePath = path;
+            [arrM addObject:item];
+        }
+        
+        for (NSString *path in dict[WCPathTypeUnknownKey]) {
+            WCPathItem *item = [WCPathItem itemWithPath:path];
+            item.pathType = WCPathTypeUnknown;
+            item.relativePath = path;
+            [arrM addObject:item];
+        }
+    }
+
+    return arrM;
+}
+
++ (void)deleteFavoritePathItemWithItem:(WCPathItem *)item {
+    WCPathType pathType = item.pathType;
+    
+    NSMutableDictionary *plistDictM = [NSMutableDictionary dictionary];
+    
+    NSData *data = [NSData dataWithContentsOfFile:WC_FAVORITE_PATHS_PLIST_PATH];
+    NSMutableDictionary *dictM = (NSMutableDictionary *)[NSPropertyListSerialization
+                                                         propertyListFromData:data
+                                                         mutabilityOption:NSPropertyListMutableContainersAndLeaves
+                                                         format:0
+                                                         errorDescription:nil];
+    
+    [plistDictM addEntriesFromDictionary:dictM];
+    
+    NSMutableArray *arrM = [NSMutableArray arrayWithArray:dictM[NSStringFromWCPathType(pathType)]];
+    
+    NSString *pathToRemove = nil;
+    for (NSString *path in arrM) {
+        if ([path isEqualToString:item.relativePath]) {
+            pathToRemove = path;
+            break;
+        }
+    }
+    
+    if (pathToRemove) {
+        [arrM removeObject:pathToRemove];
+        plistDictM[NSStringFromWCPathType(pathType)] = arrM;
+        
+        BOOL success = [plistDictM writeToFile:WC_FAVORITE_PATHS_PLIST_PATH atomically:YES];
+        if (!success) {
+            NSLog(@"delete path failed");
+        }
+    }
 }
 
 #pragma mark
@@ -312,14 +426,14 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     cell.accessoryType = isDir ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
     
     if (isDir) {
-        cell.contextMenuItemTypes = @[ @(WCContextMenuItemView), @(WCContextMenuItemCopy) ];
-        cell.contextMenuItemTitles = @[ @"View Path", @"Copy Path" ];
+        cell.contextMenuItemTypes = @[ @(WCContextMenuItemView), @(WCContextMenuItemCopy), @(WCContextMenuItemFavorite) ];
+        cell.contextMenuItemTitles = @[ @"View Path", @"Copy Path", @"Bookmark" ];
     }
     else {
-        cell.contextMenuItemTypes = @[ @(WCContextMenuItemView), @(WCContextMenuItemCopy), @(WCContextMenuItemShare), @(WCContextMenuItemProperty) ];
-        cell.contextMenuItemTitles = @[ @"View Path", @"Copy Path", @"Export File", @"View Property" ];
+        cell.contextMenuItemTypes = @[ @(WCContextMenuItemView), @(WCContextMenuItemCopy), @(WCContextMenuItemShare), @(WCContextMenuItemProperty), @(WCContextMenuItemFavorite) ];
+        cell.contextMenuItemTitles = @[ @"View Path", @"Copy Path", @"Export File", @"View Property", @"Bookmark" ];
     }
-    cell.allowCustomActionContextMenuItems = WCContextMenuItemView | WCContextMenuItemCopy | WCContextMenuItemShare | WCContextMenuItemProperty;
+    cell.allowCustomActionContextMenuItems = WCContextMenuItemView | WCContextMenuItemCopy | WCContextMenuItemShare | WCContextMenuItemProperty | WCContextMenuItemFavorite;
     cell.delegate = self;
     
     if ([self fileIsPicture:file]) {
@@ -476,6 +590,100 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     }
     else if (item & WCContextMenuItemProperty) {
         NSLog(@"WCContextMenuItemProperty");
+    }
+    else if (item & WCContextMenuItemFavorite) {
+        NSLog(@"ONEContextMenuItemFavorite");
+        [self doSavePathToFavorites:path];
+    }
+}
+
+#pragma mark - Favorites
+
+- (void)doSavePathToFavorites:(NSString *)path {
+    BOOL isDirectory = NO;
+    BOOL existed = [[NSFileManager defaultManager] fileExistsAtPath:WC_FAVORITE_PATHS_PLIST_PATH isDirectory:&isDirectory];
+    
+    if (!existed || isDirectory) {
+        if (isDirectory) {
+            [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
+        }
+        
+        NSString *directoryPath = [WC_FAVORITE_PATHS_PLIST_PATH stringByDeletingLastPathComponent];
+        
+        if (![[NSFileManager defaultManager] fileExistsAtPath:directoryPath isDirectory:NULL]) {
+            // create the directory
+            [[NSFileManager defaultManager] createDirectoryAtPath:directoryPath withIntermediateDirectories:YES attributes:nil error:nil];
+        }
+        
+        // create new file
+        [[NSFileManager defaultManager] createFileAtPath:WC_FAVORITE_PATHS_PLIST_PATH contents:nil attributes:nil];
+    }
+    
+    NSString *relativePath = nil;
+    WCPathType pathType = [self pathTypeForPath:path relativePath:&relativePath];
+    
+    NSMutableDictionary *plistDictM = [NSMutableDictionary dictionary];
+    
+    NSData *data = [NSData dataWithContentsOfFile:WC_FAVORITE_PATHS_PLIST_PATH];
+    NSMutableDictionary *dictM = (NSMutableDictionary *)[NSPropertyListSerialization
+                                                         propertyListFromData:data
+                                                         mutabilityOption:NSPropertyListMutableContainersAndLeaves
+                                                         format:0
+                                                         errorDescription:nil];
+    
+    [plistDictM addEntriesFromDictionary:dictM];
+    
+    NSMutableArray *arrM = [NSMutableArray arrayWithArray:dictM[NSStringFromWCPathType(pathType)]];
+    
+    if (pathType == WCPathTypeUnknown) {
+        [arrM addObject:relativePath];
+    }
+    else if (pathType == WCPathTypeHome) {
+        [arrM addObject:relativePath];
+    }
+    else if (pathType == WCPathTypeBundle) {
+        [arrM addObject:relativePath];
+    }
+    
+    plistDictM[NSStringFromWCPathType(pathType)] = arrM;
+    
+    BOOL success = [plistDictM writeToFile:WC_FAVORITE_PATHS_PLIST_PATH atomically:YES];
+    if (!success) {
+        NSLog(@"write failed");
+    }
+}
+
+- (WCPathType)pathTypeForPath:(NSString *)path relativePath:(NSString **)relativePath {
+    static NSString *sHomeFolderName;
+    static NSString *sBundleFolderName;
+    
+    NSString *relativePathL = [path copy];
+    
+    if (!sHomeFolderName) {
+        sHomeFolderName = [NSHomeDirectory() lastPathComponent];
+    }
+    
+    if (!sBundleFolderName) {
+        sBundleFolderName = [[[NSBundle mainBundle] bundlePath] lastPathComponent];
+    }
+    
+    if ([path rangeOfString:sHomeFolderName].location != NSNotFound) {
+        NSRange range = [path rangeOfString:sHomeFolderName];
+        relativePathL = [path substringFromIndex:range.location + range.length];
+        *relativePath = [relativePathL stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"/"]];
+        
+        return WCPathTypeHome;
+    }
+    else if ([path rangeOfString:sBundleFolderName].location != NSNotFound) {
+        NSRange range = [path rangeOfString:sBundleFolderName];
+        relativePathL = [path substringFromIndex:range.location + range.length];
+        *relativePath = [relativePathL stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"/"]];
+        
+        return WCPathTypeBundle;
+    }
+    else {
+        *relativePath = relativePathL;
+        return WCPathTypeUnknown;
     }
 }
 

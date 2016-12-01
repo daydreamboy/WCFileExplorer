@@ -75,6 +75,9 @@
         else if (action == @selector(propertyAction:) && (self.contextMenuItemOptions & WCContextMenuItemProperty)) {
             return YES;
         }
+        else if (action == @selector(favoriteAction:) && (self.contextMenuItemOptions & WCContextMenuItemFavorite)) {
+            return YES;
+        }
         else {
             return NO;
         }
@@ -108,6 +111,10 @@
         else if (option & WCContextMenuItemProperty) {
             NSString *title = itemTitle.length ? itemTitle : NSLocalizedString(@"Property", nil);
             [items addObject:[[UIMenuItem alloc] initWithTitle:title action:@selector(propertyAction:)]];
+        }
+        else if (option & WCContextMenuItemFavorite) {
+            NSString *title = itemTitle.length ? itemTitle : NSLocalizedString(@"Favorite", nil);
+            [items addObject:[[UIMenuItem alloc] initWithTitle:title action:@selector(favoriteAction:)]];
         }
     }
     
@@ -157,6 +164,18 @@
     if (self.allowCustomActionContextMenuItems & WCContextMenuItemProperty) {
         if ([self.delegate respondsToSelector:@selector(contextMenuCell:contextMenuItemClicked:withSender:)]) {
             [self.delegate contextMenuCell:self contextMenuItemClicked:WCContextMenuItemProperty withSender:self];
+        }
+    }
+    else {
+        // Default action
+        // do nothing here
+    }
+}
+
+- (void)favoriteAction:(id)sender {
+    if (self.allowCustomActionContextMenuItems & WCContextMenuItemFavorite) {
+        if ([self.delegate respondsToSelector:@selector(contextMenuCell:contextMenuItemClicked:withSender:)]) {
+            [self.delegate contextMenuCell:self contextMenuItemClicked:WCContextMenuItemFavorite withSender:self];
         }
     }
     else {

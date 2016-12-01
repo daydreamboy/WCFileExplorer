@@ -15,6 +15,7 @@ typedef NS_OPTIONS(NSUInteger, WCContextMenuItem) {
     WCContextMenuItemCopy       = 1 << 1, // 2
     WCContextMenuItemShare      = 1 << 2, // 4
     WCContextMenuItemProperty   = 1 << 3, // 8
+    WCContextMenuItemFavorite   = 1 << 4,
 };
 
 
