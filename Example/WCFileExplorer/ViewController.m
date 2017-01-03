@@ -96,6 +96,16 @@
     return cell;
 }
 
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+    WCPathItem *item = self.listData[indexPath.row];
+    if ([self.reservedPaths containsObject:item]) {
+        return NO;
+    }
+    else {
+        return YES;
+    }
+}
+
 #pragma mark - UITableViewDelegate
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -133,16 +143,6 @@
     }];
     
     return @[action];
-}
-
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
-    WCPathItem *item = self.listData[indexPath.row];
-    if ([self.reservedPaths containsObject:item]) {
-        return NO;
-    }
-    else {
-        return YES;
-    }
 }
 
 #pragma mark

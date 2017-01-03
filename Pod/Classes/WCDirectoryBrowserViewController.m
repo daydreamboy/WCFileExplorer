@@ -11,6 +11,7 @@
 #import <WCFileExplorer/WCInteractiveLabel.h>
 #import <WCFileExplorer/WCContextMenuCell.h>
 #import <WCFileExplorer/WCTextEditViewController.h>
+#import <objc/runtime.h>
 
 #define SectionHeader_H                 40.0f
 
@@ -64,7 +65,7 @@ static NSString *WCFileAttributeFileSize = @"WCFileAttributeFileSize"; /*! size 
 static NSString *WCFileAttributeIsDirectory = @"WCFileAttributeIsDirectory";
 static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumberOfFilesInDirectory";
 
-@interface WCDirectoryBrowserViewController () <UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate, WCInteractiveLabelDelegate, WCContextMenuCellDelegate>
+@interface WCDirectoryBrowserViewController () <UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate, WCInteractiveLabelDelegate, WCContextMenuCellDelegate, UIActionSheetDelegate>
 @property (nonatomic, copy) NSString *pwdPath;  /**< current folder path */
 @property (nonatomic, strong) NSArray *files;   /**< list name of files */
 @property (nonatomic, strong) NSArray *filesFiltered; /**< list name of filtered files */
@@ -77,6 +78,21 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
 @property (nonatomic, strong) UISearchBar *searchBar;
 @property (nonatomic, assign) BOOL isSearching;
 
+@end
+
+@interface UIView (WCDirectoryBrowserViewController)
+@property (nonatomic, strong) id userInfo;
+@end
+
+@implementation UIView (WCDirectoryBrowserViewController)
+static const char * const UIView_WCDirectoryBrowserViewController_UserInfoObjectTag = "UIView_Frame_UserInfoObjectTag";
+@dynamic userInfo;
+- (void)setUserInfo:(id)userInfo {
+    objc_setAssociatedObject(self, UIView_WCDirectoryBrowserViewController_UserInfoObjectTag, userInfo, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+- (id)userInfo {
+    return objc_getAssociatedObject(self, UIView_WCDirectoryBrowserViewController_UserInfoObjectTag);
+}
 @end
 
 @implementation WCDirectoryBrowserViewController
@@ -174,7 +190,10 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     [self.labelTitle sizeToFit];
     
     self.navigationItem.titleView = self.labelTitle;
-    
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
     if (self.pwdPath.length) {
         NSArray *fileNames = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:self.pwdPath error:nil];
         self.files = [fileNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
@@ -183,14 +202,11 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
         [self parseAttributesOfFiles];
     }
     
-    [self.tableView setContentOffset:CGPointMake(0, CGRectGetHeight(self.searchBar.frame)) animated:NO];
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    
     if (self.isSearching) {
         [self.tableView setContentOffset:CGPointMake(0, 0) animated:NO];
+    }
+    else {
+        [self.tableView setContentOffset:CGPointMake(0, CGRectGetHeight(self.searchBar.frame)) animated:NO];
     }
 }
 
@@ -426,14 +442,14 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     cell.accessoryType = isDir ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
     
     if (isDir) {
-        cell.contextMenuItemTypes = @[ @(WCContextMenuItemView), @(WCContextMenuItemCopy), @(WCContextMenuItemFavorite) ];
-        cell.contextMenuItemTitles = @[ @"View Path", @"Copy Path", @"Bookmark" ];
+        cell.contextMenuItemTypes = @[ @(WCContextMenuItemView), @(WCContextMenuItemCopy), @(WCContextMenuItemFavorite), @(WCContextMenuItemDeletion) ];
+        cell.contextMenuItemTitles = @[ @"View Path", @"Copy Path", @"Bookmark", @"Delete" ];
     }
     else {
-        cell.contextMenuItemTypes = @[ @(WCContextMenuItemView), @(WCContextMenuItemCopy), @(WCContextMenuItemShare), @(WCContextMenuItemProperty), @(WCContextMenuItemFavorite) ];
-        cell.contextMenuItemTitles = @[ @"View Path", @"Copy Path", @"Export File", @"View Property", @"Bookmark" ];
+        cell.contextMenuItemTypes = @[ @(WCContextMenuItemView), @(WCContextMenuItemCopy), @(WCContextMenuItemShare), @(WCContextMenuItemProperty), @(WCContextMenuItemFavorite), @(WCContextMenuItemDeletion) ];
+        cell.contextMenuItemTitles = @[ @"View Path", @"Copy Path", @"Export File", @"View Property", @"Bookmark", @"Delete" ];
     }
-    cell.allowCustomActionContextMenuItems = WCContextMenuItemView | WCContextMenuItemCopy | WCContextMenuItemShare | WCContextMenuItemProperty | WCContextMenuItemFavorite;
+    cell.allowCustomActionContextMenuItems = WCContextMenuItemView | WCContextMenuItemCopy | WCContextMenuItemShare | WCContextMenuItemProperty | WCContextMenuItemFavorite | WCContextMenuItemDeletion;
     cell.delegate = self;
     
     if ([self fileIsPicture:file]) {
@@ -555,6 +571,28 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
     [self.searchBar resignFirstResponder];
 }
 
+#pragma mark - UIActionSheetDelegate
+
+- (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
+    if (buttonIndex == 0) {
+        NSLog(@"Delete");
+        NSError *error = nil;
+        NSString *fileName = actionSheet.userInfo;
+        NSString *filePath = [self pathForFile:fileName];
+        if (filePath.length && [[NSFileManager defaultManager] removeItemAtPath:filePath error:&error]) {
+            NSMutableArray *arrM = [NSMutableArray arrayWithArray:self.files];
+            [arrM removeObject:fileName];
+            
+            self.files = arrM;
+            self.filesFiltered = [self.files copy];
+            [self.tableView reloadData];
+        }
+        else {
+            NSLog(@"delete file failed at path: %@, error: %@", filePath, error);
+        }
+    }
+}
+
 #pragma mark - WCInteractiveLabelDelegate
 
 - (void)interactiveLabel:(WCInteractiveLabel *)label contextMenuItemClicked:(WCContextMenuItem)item withSender:(id)sender {
@@ -592,8 +630,15 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
         NSLog(@"WCContextMenuItemProperty");
     }
     else if (item & WCContextMenuItemFavorite) {
-        NSLog(@"ONEContextMenuItemFavorite");
+        NSLog(@"WCContextMenuItemFavorite");
         [self doSavePathToFavorites:path];
+    }
+    else if (item & WCContextMenuItemDeletion) {
+        NSLog(@"ONEContextMenuItemFavorite");
+        NSString *title = [NSString stringWithFormat:@"%@%@?", @"Confirm delete ", file];
+        UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:title delegate:self cancelButtonTitle:@"Cancel" destructiveButtonTitle:@"Delete" otherButtonTitles:nil];
+        actionSheet.userInfo = file;
+        [actionSheet showInView:self.view];
     }
 }
 

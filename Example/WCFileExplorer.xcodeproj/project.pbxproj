@@ -7,7 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2B47F1581DDB33C5007F8479 /* test1.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F1521DDB33C5007F8479 /* test1.txt */; };
+		2B47F1591DDB33C5007F8479 /* test2.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F1531DDB33C5007F8479 /* test2.txt */; };
+		2B47F15A1DDB33C5007F8479 /* test3.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F1541DDB33C5007F8479 /* test3.txt */; };
+		2B47F15B1DDB33C5007F8479 /* test4.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F1551DDB33C5007F8479 /* test4.txt */; };
+		2B47F15C1DDB33C5007F8479 /* test5.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F1561DDB33C5007F8479 /* test5.txt */; };
+		2B47F15D1DDB33C5007F8479 /* test6.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F1571DDB33C5007F8479 /* test6.txt */; };
+		2B47F1611DDB33F7007F8479 /* test7.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F15E1DDB33F7007F8479 /* test7.txt */; };
+		2B47F1621DDB33F7007F8479 /* test8.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F15F1DDB33F7007F8479 /* test8.txt */; };
+		2B47F1631DDB33F7007F8479 /* test9.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2B47F1601DDB33F7007F8479 /* test9.txt */; };
 		2B51241D1DCB48B5002C3468 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2B51241C1DCB48B5002C3468 /* Launch Screen.storyboard */; };
+		2B5124381DCF15D1002C3468 /* Test Resources in Resources */ = {isa = PBXBuildFile; fileRef = 2B5124371DCF15D1002C3468 /* Test Resources */; };
+		2B7A53461DD2CC9200119EBE /* Reveal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B7A53451DD2CC9200119EBE /* Reveal.framework */; };
 		6003F58E195388D20070C39A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58D195388D20070C39A /* Foundation.framework */; };
 		6003F590195388D20070C39A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58F195388D20070C39A /* CoreGraphics.framework */; };
 		6003F592195388D20070C39A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F591195388D20070C39A /* UIKit.framework */; };
@@ -37,7 +48,18 @@
 
 /* Begin PBXFileReference section */
 		0F1CB8DB9696EF44F636FFBA /* Pods-WCFileExplorer_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WCFileExplorer_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-WCFileExplorer_Example/Pods-WCFileExplorer_Example.release.xcconfig"; sourceTree = "<group>"; };
+		2B47F1521DDB33C5007F8479 /* test1.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test1.txt; sourceTree = "<group>"; };
+		2B47F1531DDB33C5007F8479 /* test2.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test2.txt; sourceTree = "<group>"; };
+		2B47F1541DDB33C5007F8479 /* test3.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test3.txt; sourceTree = "<group>"; };
+		2B47F1551DDB33C5007F8479 /* test4.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test4.txt; sourceTree = "<group>"; };
+		2B47F1561DDB33C5007F8479 /* test5.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test5.txt; sourceTree = "<group>"; };
+		2B47F1571DDB33C5007F8479 /* test6.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test6.txt; sourceTree = "<group>"; };
+		2B47F15E1DDB33F7007F8479 /* test7.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test7.txt; sourceTree = "<group>"; };
+		2B47F15F1DDB33F7007F8479 /* test8.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test8.txt; sourceTree = "<group>"; };
+		2B47F1601DDB33F7007F8479 /* test9.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test9.txt; sourceTree = "<group>"; };
 		2B51241C1DCB48B5002C3468 /* Launch Screen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
+		2B5124371DCF15D1002C3468 /* Test Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Test Resources"; sourceTree = SOURCE_ROOT; };
+		2B7A53451DD2CC9200119EBE /* Reveal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Reveal.framework; sourceTree = SOURCE_ROOT; };
 		4BCE0212449EC55E2E886A73 /* Pods-WCFileExplorer_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WCFileExplorer_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-WCFileExplorer_Tests/Pods-WCFileExplorer_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		5337AF8BAE82629079D9AB0C /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		5E2C5B40CE4AEEEE76A5CBE0 /* WCFileExplorer.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = WCFileExplorer.podspec; path = ../WCFileExplorer.podspec; sourceTree = "<group>"; };
@@ -74,6 +96,7 @@
 			files = (
 				6003F590195388D20070C39A /* CoreGraphics.framework in Frameworks */,
 				6003F592195388D20070C39A /* UIKit.framework in Frameworks */,
+				2B7A53461DD2CC9200119EBE /* Reveal.framework in Frameworks */,
 				6003F58E195388D20070C39A /* Foundation.framework in Frameworks */,
 				895EA988525AA2E5826AF499 /* Pods_WCFileExplorer_Example.framework in Frameworks */,
 			);
@@ -130,11 +153,22 @@
 		6003F593195388D20070C39A /* Example for WCFileExplorer */ = {
 			isa = PBXGroup;
 			children = (
+				2B7A53451DD2CC9200119EBE /* Reveal.framework */,
 				6003F59C195388D20070C39A /* AppDelegate.h */,
 				6003F59D195388D20070C39A /* AppDelegate.m */,
 				6003F5A5195388D20070C39A /* ViewController.h */,
 				6003F5A6195388D20070C39A /* ViewController.m */,
 				6003F5A8195388D20070C39A /* Images.xcassets */,
+				2B47F1521DDB33C5007F8479 /* test1.txt */,
+				2B47F1531DDB33C5007F8479 /* test2.txt */,
+				2B47F1541DDB33C5007F8479 /* test3.txt */,
+				2B47F1551DDB33C5007F8479 /* test4.txt */,
+				2B47F1561DDB33C5007F8479 /* test5.txt */,
+				2B47F1571DDB33C5007F8479 /* test6.txt */,
+				2B47F15E1DDB33F7007F8479 /* test7.txt */,
+				2B47F15F1DDB33F7007F8479 /* test8.txt */,
+				2B47F1601DDB33F7007F8479 /* test9.txt */,
+				2B5124371DCF15D1002C3468 /* Test Resources */,
 				6003F594195388D20070C39A /* Supporting Files */,
 			);
 			name = "Example for WCFileExplorer";
@@ -279,9 +313,19 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2B47F1581DDB33C5007F8479 /* test1.txt in Resources */,
 				2B51241D1DCB48B5002C3468 /* Launch Screen.storyboard in Resources */,
+				2B5124381DCF15D1002C3468 /* Test Resources in Resources */,
+				2B47F1611DDB33F7007F8479 /* test7.txt in Resources */,
+				2B47F1631DDB33F7007F8479 /* test9.txt in Resources */,
+				2B47F15B1DDB33C5007F8479 /* test4.txt in Resources */,
+				2B47F15A1DDB33C5007F8479 /* test3.txt in Resources */,
+				2B47F15D1DDB33C5007F8479 /* test6.txt in Resources */,
 				6003F5A9195388D20070C39A /* Images.xcassets in Resources */,
 				6003F598195388D20070C39A /* InfoPlist.strings in Resources */,
+				2B47F1591DDB33C5007F8479 /* test2.txt in Resources */,
+				2B47F15C1DDB33C5007F8479 /* test5.txt in Resources */,
+				2B47F1621DDB33F7007F8479 /* test8.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -470,7 +514,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -503,7 +547,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 8.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
@@ -517,11 +561,24 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				DEVELOPMENT_TEAM = 7ZASD48W58;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "WCFileExplorer/WCFileExplorer-Prefix.pch";
 				INFOPLIST_FILE = "WCFileExplorer/WCFileExplorer-Info.plist";
 				MODULE_NAME = ExampleApp;
-				PRODUCT_BUNDLE_IDENTIFIER = com.wc.example;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					"\"WCFileExplorer\"",
+					"-ObjC",
+					"-framework",
+					Reveal,
+					"-lz",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cl.example;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -534,11 +591,24 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				DEVELOPMENT_TEAM = 7ZASD48W58;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "WCFileExplorer/WCFileExplorer-Prefix.pch";
 				INFOPLIST_FILE = "WCFileExplorer/WCFileExplorer-Info.plist";
 				MODULE_NAME = ExampleApp;
-				PRODUCT_BUNDLE_IDENTIFIER = com.wc.example;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					"\"WCFileExplorer\"",
+					"-ObjC",
+					"-framework",
+					Reveal,
+					"-lz",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cl.example;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
