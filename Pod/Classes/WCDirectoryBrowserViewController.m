@@ -11,6 +11,7 @@
 #import <WCFileExplorer/WCInteractiveLabel.h>
 #import <WCFileExplorer/WCContextMenuCell.h>
 #import <WCFileExplorer/WCTextEditViewController.h>
+#import <WCFileExplorer/WCImageBrowserViewController.h>
 #import <objc/runtime.h>
 
 #define SectionHeader_H                 40.0f
@@ -77,6 +78,8 @@ static NSString *WCFileAttributeNumberOfFilesInDirectory = @"WCFileAttributeNumb
 @property (nonatomic, strong) WCInteractiveLabel *labelTitle;
 @property (nonatomic, strong) UISearchBar *searchBar;
 @property (nonatomic, assign) BOOL isSearching;
+
+@property (nonatomic, strong) NSMutableArray *imageFiles;
 
 @end
 
@@ -212,6 +215,13 @@ static const char * const UIView_WCDirectoryBrowserViewController_UserInfoObject
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
+    self.imageFiles = [NSMutableArray array];
+    
+    for (NSString *file in self.filesFiltered) {
+        if ([self fileIsPicture:file]) {
+            [self.imageFiles addObject:file];
+        }
+    }
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
@@ -518,6 +528,27 @@ static const char * const UIView_WCDirectoryBrowserViewController_UserInfoObject
     if ([self fileIsDirectory:file]) {
         WCDirectoryBrowserViewController *vc = [[WCDirectoryBrowserViewController alloc] initWithPath:path];
         [self.navigationController pushViewController:vc animated:YES];
+    }
+    else if ([self fileIsPicture:file]) {
+        NSMutableArray *images = [NSMutableArray array];
+        NSUInteger currentIndex = 0;
+        for (NSUInteger i = 0; i < [self.imageFiles count]; i++) {
+            NSString *imageFile = self.imageFiles[i];
+
+            UIImage *image = [UIImage imageWithContentsOfFile:[self pathForFile:imageFile]];
+            if (image) {
+                [images addObject:image];
+                
+                if ([imageFile isEqualToString:file]) {
+                    currentIndex = i;
+                }
+            }
+        }
+        
+        if (images.count) {
+            WCImageBrowserViewController *vc = [[WCImageBrowserViewController alloc] initWithImages:images index:currentIndex];
+            [self.navigationController pushViewController:vc animated:YES];
+        }
     }
     else {
         WCTextEditViewController *vc = [[WCTextEditViewController alloc] initWithFilePath:path];
