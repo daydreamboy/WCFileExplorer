@@ -45,19 +45,28 @@
     // set up our content size and min/max zoomscale
     CGFloat xScale = boundSize.width / imageSize.width;     // the scale needed to perfectly fit the image width-wise
     CGFloat yScale = boundSize.height / imageSize.height;   // the scale needed to perfectly fit the image height-wise
-    CGFloat minScale = MIN(xScale, yScale); // use minimum of these to allow the image to become fully visible
     
+    CGFloat minScale = MIN(xScale, yScale); // use minimum of these to allow the image to become fully visible
     CGFloat maxScale = MAX(MAX(xScale, yScale), 1.0);
     
-    // don't let minScale exceed maxScale. (If the image is smaller than the screen, we don't want to force it to be zoomed.)
-    if (minScale > maxScale) {
-        minScale = maxScale;
-    }
-    
+    // don't let minScale exceed maxScale.
     self.contentSize = imageSize;
-    self.maximumZoomScale = maxScale;
-    self.minimumZoomScale = minScale;
-    self.zoomScale = minScale; // start out with the content fully visible
+    
+    // if the image is smaller than the screen, we don't want to force it to be zoomed.
+    if (imageSize.width < boundSize.width && imageSize.height < boundSize.height) {
+        self.minimumZoomScale = 1.0;
+        self.maximumZoomScale = MAX(minScale, 1.0);
+        self.zoomScale = 1.0;
+    }
+    else {
+        if (minScale > maxScale) {
+            minScale = maxScale;
+        }
+        
+        self.maximumZoomScale = maxScale;
+        self.minimumZoomScale = minScale;
+        self.zoomScale = minScale; // start out with the content fully visible
+    }
 }
 
 - (void)centerImageView {
