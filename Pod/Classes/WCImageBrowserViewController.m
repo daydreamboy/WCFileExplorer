@@ -34,7 +34,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-//    self.view.backgroundColor = [UIColor whiteColor];
+    self.view.backgroundColor = [UIColor whiteColor];
     
     CGSize screenSize = [[UIScreen mainScreen] bounds].size;
     
@@ -45,7 +45,6 @@
     CGRect pagingScrollViewFrame = [self frameForPagingScrollView];
     UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:pagingScrollViewFrame];
     scrollView.pagingEnabled = YES;
-    scrollView.backgroundColor = [UIColor blackColor];
     scrollView.showsHorizontalScrollIndicator = NO;
     scrollView.showsVerticalScrollIndicator = NO;
     scrollView.contentSize = CGSizeMake(pagingScrollViewFrame.size.width * [self imageCount], pagingScrollViewFrame.size.height);
@@ -201,7 +200,23 @@
 #pragma mark - Actions
 
 - (void)pagingScrollViewSingleTapped:(UITapGestureRecognizer *)recognizer {
-    
+    if (!self.navigationController.navigationBar.hidden) {
+        [UIView animateWithDuration:0.4 delay:0 options:UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionTransitionCrossDissolve animations:^{
+            self.navigationController.navigationBar.alpha = 0;
+            self.view.backgroundColor = [UIColor blackColor];
+        } completion:^(BOOL finished) {
+            self.navigationController.navigationBar.hidden = YES;
+        }];
+    }
+    else {
+        self.navigationController.navigationBar.alpha = 0;
+        self.navigationController.navigationBar.hidden = NO;
+        
+        [UIView animateWithDuration:0.4 delay:0 options:UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionTransitionCrossDissolve animations:^{
+            self.navigationController.navigationBar.alpha = 1;
+            self.view.backgroundColor = [UIColor whiteColor];
+        } completion:nil];
+    }
 }
 
 @end
